@@ -16,10 +16,10 @@ if (typeof Snap != 'undefined') {
   };
 
   var RECT = {
-        'stroke': '#000000',
-        'stroke-width': 2,
-        'fill': '#fff'
-      };
+    'stroke': '#000000',
+    'stroke-width': 2,
+    'fill': '#fff'
+  };
 
   var LOADED_FONTS = {};
 
@@ -27,44 +27,44 @@ if (typeof Snap != 'undefined') {
    * SnapTheme
    ******************/
 
-  var SnapTheme = function(diagram, options, resume) {
-        _.defaults(options, {
-            'css-class': 'simple',
-            'font-size': 16,
-            'font-family': 'Andale Mono, monospace'
-          });
+  var SnapTheme = function (diagram, options, resume) {
+    _.defaults(options, {
+      'css-class': 'simple',
+      'font-size': 16,
+      'font-family': 'Andale Mono, monospace'
+    });
 
-        this.init(diagram, options, resume);
-      };
+    this.init(diagram, options, resume);
+  };
 
   _.extend(SnapTheme.prototype, BaseTheme.prototype, {
 
-    init: function(diagram, options, resume) {
-            BaseTheme.prototype.init.call(this, diagram);
+    init: function (diagram, options, resume) {
+      BaseTheme.prototype.init.call(this, diagram);
 
-            this.paper_  = undefined;
-            this.cssClass_ = options['css-class'] || undefined;
-            this.font_ = {
-                'font-size': options['font-size'],
-                'font-family': options['font-family']
-              };
+      this.paper_ = undefined;
+      this.cssClass_ = options['css-class'] || undefined;
+      this.font_ = {
+        'font-size': options['font-size'],
+        'font-family': options['font-family']
+      };
 
-            var a = this.arrowTypes_ = {};
-            a[ARROWTYPE.FILLED] = 'Block';
-            a[ARROWTYPE.OPEN]   = 'Open';
+      var a = this.arrowTypes_ = {};
+      a[ARROWTYPE.FILLED] = 'Block';
+      a[ARROWTYPE.OPEN] = 'Open';
 
-            var l = this.lineTypes_ = {};
-            l[LINETYPE.SOLID]  = '';
-            l[LINETYPE.DOTTED] = '6,2';
+      var l = this.lineTypes_ = {};
+      l[LINETYPE.SOLID] = '';
+      l[LINETYPE.DOTTED] = '6,2';
 
-            var that = this;
-            this.waitForFont(function() {
-              resume(that);
-            });
-          },
+      var that = this;
+      this.waitForFont(function () {
+        resume(that);
+      });
+    },
 
     // Wait for loading of the font
-    waitForFont: function(callback) {
+    waitForFont: function (callback) {
       var fontFamily = this.font_['font-family'];
 
       if (typeof WebFont == 'undefined') {
@@ -78,29 +78,29 @@ if (typeof Snap != 'undefined') {
       }
 
       WebFont.load({
-          custom: {
-              families: [fontFamily] // TODO replace this with something that reads the css
-            },
-          classes: false, // No need to place classes on the DOM, just use JS Events
-          active: function() {
-              LOADED_FONTS[fontFamily] = true;
-              callback();
-            },
-          inactive: function() {
-              // If we fail to fetch the font, still continue.
-              LOADED_FONTS[fontFamily] = true;
-              callback();
-            }
-        });
+        custom: {
+          families: [fontFamily] // TODO replace this with something that reads the css
+        },
+        classes: false, // No need to place classes on the DOM, just use JS Events
+        active: function () {
+          LOADED_FONTS[fontFamily] = true;
+          callback();
+        },
+        inactive: function () {
+          // If we fail to fetch the font, still continue.
+          LOADED_FONTS[fontFamily] = true;
+          callback();
+        }
+      });
     },
 
-    addDescription: function(svg, description) {
-          var desc = document.createElementNS(xmlns, 'desc');
-          desc.appendChild(document.createTextNode(description));
-          svg.appendChild(desc);
-        },
+    addDescription: function (svg, description) {
+      var desc = document.createElementNS(xmlns, 'desc');
+      desc.appendChild(document.createTextNode(description));
+      svg.appendChild(desc);
+    },
 
-    setupPaper: function(container) {
+    setupPaper: function (container) {
       // Container must be a SVG element. We assume it's a div, so lets create a SVG and insert
       var svg = document.createElementNS(xmlns, 'svg');
       container.appendChild(svg);
@@ -120,22 +120,22 @@ if (typeof Snap != 'undefined') {
       var a = this.arrowMarkers_ = {};
       var arrow = this.paper_.path('M 0 0 L 5 2.5 L 0 5 z');
       a[ARROWTYPE.FILLED] = arrow.marker(0, 0, 5, 5, 5, 2.5)
-       .attr({id: 'markerArrowBlock'});
+        .attr({ id: 'markerArrowBlock' });
 
       arrow = this.paper_.path('M 9.6,8 1.92,16 0,13.7 5.76,8 0,2.286 1.92,0 9.6,8 z');
       a[ARROWTYPE.OPEN] = arrow.marker(0, 0, 9.6, 16, 9.6, 8)
-       .attr({markerWidth: '4', id: 'markerArrowOpen'});
+        .attr({ markerWidth: '4', id: 'markerArrowOpen' });
     },
 
-    layout: function() {
+    layout: function () {
       BaseTheme.prototype.layout.call(this);
       this.paper_.attr({
-        width:  this.diagram.width + 'px',
+        width: this.diagram.width + 'px',
         height: this.diagram.height + 'px'
       });
     },
 
-    textBBox: function(text, font) {
+    textBBox: function (text, font) {
       // TODO getBBox will return the bounds with any whitespace/kerning. This makes some of our aligments screwed up
       var t = this.createText(text, font);
       var bb = t.getBBox();
@@ -144,26 +144,26 @@ if (typeof Snap != 'undefined') {
     },
 
     // For each drawn element, push onto the stack, so it can be wrapped in a single outer element
-    pushToStack: function(element) {
+    pushToStack: function (element) {
       this._stack.push(element);
       return element;
     },
 
     // Begin a group of elements
-    beginGroup: function() {
+    beginGroup: function () {
       this._stack = [];
     },
 
     // Finishes the group, and returns the <group> element
-    finishGroup: function() {
+    finishGroup: function () {
       var g = this.paper_.group.apply(this.paper_, this._stack);
       this.beginGroup(); // Reset the group
       return g;
     },
 
-    createText: function(text, font) {
-      text = text.split('\n').map(function(x) {
-          return x.trim();
+    createText: function (text, font) {
+      text = text.split('\n').map(function (x) {
+        return x.trim();
       });
       var t = this.paper_.text(0, 0, text);
       t.attr(font || {});
@@ -178,7 +178,7 @@ if (typeof Snap != 'undefined') {
       return t;
     },
 
-    drawLine: function(x1, y1, x2, y2, linetype, arrowhead) {
+    drawLine: function (x1, y1, x2, y2, linetype, arrowhead) {
       var line = this.paper_.line(x1, y1, x2, y2).attr(LINE);
       if (linetype !== undefined) {
         line.attr('strokeDasharray', this.lineTypes_[linetype]);
@@ -189,7 +189,7 @@ if (typeof Snap != 'undefined') {
       return this.pushToStack(line);
     },
 
-    drawRect: function(x, y, w, h) {
+    drawRect: function (x, y, w, h) {
       var rect = this.paper_.rect(x, y, w, h).attr(RECT);
       return this.pushToStack(rect);
     },
@@ -201,7 +201,7 @@ if (typeof Snap != 'undefined') {
      * font (Object)
      * align (string) ALIGN_LEFT, ALIGN_CENTER, ALIGN_HORIZONTAL_CENTER or ALIGN_VERTICAL_CENTER
      */
-    drawText: function(x, y, text, font, align) {
+    drawText: function (x, y, text, font, align, cls, id) {
       var t = this.createText(text, font);
       var bb = t.getBBox();
 
@@ -214,38 +214,54 @@ if (typeof Snap != 'undefined') {
 
       // Now move the text into place
       // `y - bb.y` because text(..) is positioned from the baseline, so this moves it down.
-      t.attr({x: x - bb.x, y: y - bb.y});
-      t.selectAll('tspan').attr({x: x});
+      t.attr({ x: x - bb.x, y: y - bb.y });
+      t.selectAll('tspan').attr({ x: x });
+
+      if (cls) {
+        t.addClass(cls);
+      }
+      if (id) {
+        t.attr('id', id);
+      }
 
       this.pushToStack(t);
       return t;
     },
 
-    drawTitle: function() {
+    drawTitle: function () {
       this.beginGroup();
       BaseTheme.prototype.drawTitle.call(this);
       return this.finishGroup().addClass('title');
     },
 
-    drawActor: function(actor, offsetY, height) {
+    drawActor: function (actor, offsetY, height, idx) {
       this.beginGroup();
       BaseTheme.prototype.drawActor.call(this, actor, offsetY, height);
-      return this.finishGroup().addClass('actor');
+
+      var group = this.finishGroup().addClass('actor');
+      if (actor.cls) {
+        group.addClass(actor.cls[idx]);
+      }
+      if (actor.id) {
+        group.attr('id', actor.id[idx]);
+      }
+
+      return group;
     },
 
-    drawSignal: function(signal, offsetY) {
+    drawSignal: function (signal, offsetY) {
       this.beginGroup();
       BaseTheme.prototype.drawSignal.call(this, signal, offsetY);
       return this.finishGroup().addClass('signal');
     },
 
-    drawSelfSignal: function(signal, offsetY) {
+    drawSelfSignal: function (signal, offsetY) {
       this.beginGroup();
       BaseTheme.prototype.drawSelfSignal.call(this, signal, offsetY);
       return this.finishGroup().addClass('signal');
     },
 
-    drawNote: function(note, offsetY) {
+    drawNote: function (note, offsetY) {
       this.beginGroup();
       BaseTheme.prototype.drawNote.call(this, note, offsetY);
       return this.finishGroup().addClass('note');
@@ -256,19 +272,19 @@ if (typeof Snap != 'undefined') {
    * SnapHandTheme
    ******************/
 
-  var SnapHandTheme = function(diagram, options, resume) {
-        _.defaults(options, {
-            'css-class': 'hand',
-            'font-size': 16,
-            'font-family': 'danielbd'
-          });
+  var SnapHandTheme = function (diagram, options, resume) {
+    _.defaults(options, {
+      'css-class': 'hand',
+      'font-size': 16,
+      'font-family': 'danielbd'
+    });
 
-        this.init(diagram, options, resume);
-      };
+    this.init(diagram, options, resume);
+  };
 
   // Take the standard SnapTheme and make all the lines wobbly
   _.extend(SnapHandTheme.prototype, SnapTheme.prototype, {
-    drawLine: function(x1, y1, x2, y2, linetype, arrowhead) {
+    drawLine: function (x1, y1, x2, y2, linetype, arrowhead) {
       var line = this.paper_.path(handLine(x1, y1, x2, y2)).attr(LINE);
       if (linetype !== undefined) {
         line.attr('strokeDasharray', this.lineTypes_[linetype]);
@@ -279,12 +295,12 @@ if (typeof Snap != 'undefined') {
       return this.pushToStack(line);
     },
 
-    drawRect: function(x, y, w, h) {
+    drawRect: function (x, y, w, h) {
       var rect = this.paper_.path(handRect(x, y, w, h)).attr(RECT);
       return this.pushToStack(rect);
     }
   });
 
   registerTheme('snapSimple', SnapTheme);
-  registerTheme('snapHand',   SnapHandTheme);
+  registerTheme('snapHand', SnapHandTheme);
 }

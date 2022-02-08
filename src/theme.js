@@ -341,10 +341,10 @@ _.extend(BaseTheme.prototype, {
     var y = offsetY;
     _.each(this.diagram.actors, _.bind(function(a) {
       // Top box
-      this.drawActor(a, y, this.actorsHeight_);
+      this.drawActor(a, y, this.actorsHeight_, 0);
 
       // Bottom box
-      this.drawActor(a, y + this.actorsHeight_ + this.signalsHeight_, this.actorsHeight_);
+      this.drawActor(a, y + this.actorsHeight_ + this.signalsHeight_, this.actorsHeight_, 1);
 
       // Veritical line
       var aX = getCenterX(a);
@@ -469,6 +469,6 @@ _.extend(BaseTheme.prototype, {
       y += padding;
     }
 
-    return this.drawText(x, y, text, font, align);
+    return this.drawText(x, y, text, font, align, box.cls, box.id);
   }
 });

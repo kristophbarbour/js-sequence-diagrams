@@ -15,26 +15,28 @@
 
 %%
 
-[\r\n]+           return 'NL';
-\s+               /* skip whitespace */
-\#[^\r\n]*        /* skip comments */
-"participant"     return 'participant';
-"left of"         return 'left_of';
-"right of"        return 'right_of';
-"over"            return 'over';
-"note"            return 'note';
-"title"           { this.begin('title'); return 'title'; }
-<title>[^\r\n]+   { this.popState(); return 'MESSAGE'; }
-","               return ',';
-[^\->:,\r\n"]+    return 'ACTOR';
-\"[^"]+\"         return 'ACTOR';
-"--"              return 'DOTLINE';
-"-"               return 'LINE';
-">>"              return 'OPENARROW';
-">"               return 'ARROW';
-:[^\r\n]+         return 'MESSAGE';
-<<EOF>>           return 'EOF';
-.                 return 'INVALID';
+[\r\n]+           	return 'NL';
+\s+               	/* skip whitespace */
+\#[^\r\n]*        	/* skip comments */
+"participant"     	return 'participant';
+"left of"         	return 'left_of';
+"right of"        	return 'right_of';
+"over"            	return 'over';
+"note"            	return 'note';
+"title"           	{ this.begin('title'); return 'title'; }
+<title>[^\r\n]+   	{ this.popState(); return 'MESSAGE'; }
+","               	return ',';
+[^\->:,\r\n\|"]+   	return 'ACTOR';
+\"[^"]+\"        	return 'ACTOR';
+\\[\.[^\]]+ 		return 'CLASS';
+\\[#[^\]]+ 			return 'ID';
+"--"              	return 'DOTLINE';
+"-"               	return 'LINE';
+">>"              	return 'OPENARROW';
+">"               	return 'ARROW';
+:[^\r\n]+         	return 'MESSAGE';
+<<EOF>>           	return 'EOF';
+.                 	return 'INVALID';
 
 /lex
 
@@ -58,9 +60,11 @@ line
 
 statement
 	: 'participant' actor_alias { $2; }
-	| signal               { yy.parser.yy.addSignal($1); }
-	| note_statement       { yy.parser.yy.addSignal($1); }
-	| 'title' message      { yy.parser.yy.setTitle($2);  }
+	| signal               	{ yy.parser.yy.addSignal($1); }
+	| signal_class		 	{ yy.parser.yy.addSignal($1); }
+	| signal_id		 		{ yy.parser.yy.addSignal($1); }
+	| note_statement      	{ yy.parser.yy.addSignal($1); }
+	| 'title' message      	{ yy.parser.yy.setTitle($2);  }
 	;
 
 note_statement
@@ -81,6 +85,24 @@ placement
 signal
 	: actor signaltype actor message
 	{ $$ = new Diagram.Signal($1, $2, $3, $4); }
+	;
+
+signal_class
+	: actor_class signaltype actor_class message
+	{ $$ = new Diagram.Signal($1, $2, $3, $4); }
+	;
+
+signal_id
+	: actor_id signaltype actor_id message
+	{ $$ = new Diagram.Signal($1, $2, $3, $4); }
+	;
+
+actor_class
+	: actor CLASS	{ $$ = yy.parser.yy.addClass(Diagram.unescape($1, $2)); }
+	;
+
+actor_id
+	: actor ID	{ $$ = yy.parser.yy.addID(Diagram.unescape($1, $2)); }
 	;
 
 actor

@@ -14,16 +14,30 @@ function Diagram() {
  * Return an existing actor with this alias, or creates a new one with alias and name.
  */
 Diagram.prototype.getActor = function(alias, name) {
-  alias = alias.trim();
+  alias = alias.trim()
+  var style = /\[([\.#][^\]]+)\]/im.exec(alias);
+  var styleLess = alias.replace(/\[([^\]]+)\]/g, '');
 
   var i;
   var actors = this.actors;
   for (i in actors) {
-    if (actors[i].alias == alias) {
+    if (actors[i].alias == styleLess) {
+      // Apply updated styles
+      console.log(style);
+      if(style){
+        console.log(style[1]);
+        if(style[1].indexOf('.') === 0) {
+          actors[i].cls.push(style[1].substring(1));
+        }
+        else {
+          actors[i].ids.push(style[1].substring(1));
+        }
+
+      }
       return actors[i];
     }
   }
-  i = actors.push(new Diagram.Actor(alias, (name || alias), actors.length));
+  i = actors.push(new Diagram.Actor(styleLess, (name || alias), actors.length));
   return actors[ i - 1 ];
 };
 
@@ -31,7 +45,7 @@ Diagram.prototype.getActor = function(alias, name) {
  * Parses the input as either a alias, or a "name as alias", and returns the corresponding actor.
  */
 Diagram.prototype.getActorWithAlias = function(input) {
-  input = input.trim();
+  input = input.trim()
 
   // We are lazy and do some of the parsing in javascript :(. TODO move into the .jison file.
   var s = /([\s\S]+) as (\S+)$/im.exec(input);
@@ -46,6 +60,14 @@ Diagram.prototype.getActorWithAlias = function(input) {
   return this.getActor(alias, name);
 };
 
+Diagram.prototype.addClass = function(actor, input) {
+  var style = /(\\[\.[^\]]+)$/im.exec(input);
+}
+
+Diagram.prototype.addID = function(actor, input) {
+  var style = /(\|[\.#]+[a-zA-Z]+[\-_a-zA-z\d]*)$/im.exec(input);
+}
+
 Diagram.prototype.setTitle = function(title) {
   this.title = title;
 };
@@ -58,6 +80,17 @@ Diagram.Actor = function(alias, name, index) {
   this.alias = alias;
   this.name  = name;
   this.index = index;
+  this.cls = "actor";
+  var style = /\[(\.[^\]]+)\]/im.exec(name);
+  if(style) {
+    if(style[1].indexOf('.') === 0) {
+      this.cls = [style[1].substring(1)];
+    } else {
+      this.id = [style[1].substring(1)];
+    }
+    this.name = this.name.replace(style[0], '');
+    this.alias = this.alias.replace(style[0], '');
+  }
 };
 
 Diagram.Signal = function(actorA, signaltype, actorB, message) {

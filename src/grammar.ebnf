@@ -15,11 +15,15 @@ statement ::=
 		( 'left of' | 'right of') actor
 		| 'over' (actor | actor ',' actor)
 		) ':' message
-	| actor ( '-' | '--' ) ( '>' | '>>' )? actor ':' message
+	| actor (class']'|id']')? ( '-' | '--' ) ( '>' | '>>' )? actor (class']'|id']')? ':' message
 	)
 
 /*
 message ::= [^\n]+
 
 actor ::= [^\->:\n,]+
+
+class ::= \|\.\[[^\]]+
+
+id ::= \|#\[[^\]]+
 */

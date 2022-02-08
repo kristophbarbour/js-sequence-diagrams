@@ -24,16 +24,30 @@ function Diagram() {
  * Return an existing actor with this alias, or creates a new one with alias and name.
  */
 Diagram.prototype.getActor = function(alias, name) {
-  alias = alias.trim();
+  alias = alias.trim()
+  var style = /\[([\.#][^\]]+)\]/im.exec(alias);
+  var styleLess = alias.replace(/\[([^\]]+)\]/g, '');
 
   var i;
   var actors = this.actors;
   for (i in actors) {
-    if (actors[i].alias == alias) {
+    if (actors[i].alias == styleLess) {
+      // Apply updated styles
+      console.log(style);
+      if(style){
+        console.log(style[1]);
+        if(style[1].indexOf('.') === 0) {
+          actors[i].cls.push(style[1].substring(1));
+        }
+        else {
+          actors[i].ids.push(style[1].substring(1));
+        }
+
+      }
       return actors[i];
     }
   }
-  i = actors.push(new Diagram.Actor(alias, (name || alias), actors.length));
+  i = actors.push(new Diagram.Actor(styleLess, (name || alias), actors.length));
   return actors[ i - 1 ];
 };
 
@@ -41,7 +55,7 @@ Diagram.prototype.getActor = function(alias, name) {
  * Parses the input as either a alias, or a "name as alias", and returns the corresponding actor.
  */
 Diagram.prototype.getActorWithAlias = function(input) {
-  input = input.trim();
+  input = input.trim()
 
   // We are lazy and do some of the parsing in javascript :(. TODO move into the .jison file.
   var s = /([\s\S]+) as (\S+)$/im.exec(input);
@@ -56,6 +70,14 @@ Diagram.prototype.getActorWithAlias = function(input) {
   return this.getActor(alias, name);
 };
 
+Diagram.prototype.addClass = function(actor, input) {
+  var style = /(\\[\.[^\]]+)$/im.exec(input);
+}
+
+Diagram.prototype.addID = function(actor, input) {
+  var style = /(\|[\.#]+[a-zA-Z]+[\-_a-zA-z\d]*)$/im.exec(input);
+}
+
 Diagram.prototype.setTitle = function(title) {
   this.title = title;
 };
@@ -68,6 +90,17 @@ Diagram.Actor = function(alias, name, index) {
   this.alias = alias;
   this.name  = name;
   this.index = index;
+  this.cls = "actor";
+  var style = /\[(\.[^\]]+)\]/im.exec(name);
+  if(style) {
+    if(style[1].indexOf('.') === 0) {
+      this.cls = [style[1].substring(1)];
+    } else {
+      this.id = [style[1].substring(1)];
+    }
+    this.name = this.name.replace(style[0], '');
+    this.alias = this.alias.replace(style[0], '');
+  }
 };
 
 Diagram.Signal = function(actorA, signaltype, actorB, message) {
@@ -213,13 +246,11 @@ if (typeof Object.getPrototypeOf !== 'function') {
   }
 */
 var parser = function() {
-    function Parser() {
-        this.yy = {};
-    }
-    var o = function(k, v, o, l) {
-        for (o = o || {}, l = k.length; l--; o[k[l]] = v) ;
+    function o(k, v, o, l) {
+        for (o = o || {}, l = k.length; l--; o[k[l]] = v);
         return o;
-    }, $V0 = [ 5, 8, 9, 13, 15, 24 ], $V1 = [ 1, 13 ], $V2 = [ 1, 17 ], $V3 = [ 24, 29, 30 ], parser = {
+    }
+    var $V0 = [ 5, 8, 9, 15, 17, 30 ], $V1 = [ 1, 17 ], $V2 = [ 1, 21 ], $V3 = [ 1, 23 ], $V4 = [ 1, 24 ], $V5 = [ 1, 26 ], $V6 = [ 1, 27 ], $V7 = [ 33, 34, 37 ], $V8 = [ 30, 35, 36 ], $V5 = {
         trace: function() {},
         yy: {},
         symbols_: {
@@ -233,26 +264,32 @@ var parser = function() {
             participant: 9,
             actor_alias: 10,
             signal: 11,
-            note_statement: 12,
-            title: 13,
-            message: 14,
-            note: 15,
-            placement: 16,
-            actor: 17,
-            over: 18,
-            actor_pair: 19,
-            ",": 20,
-            left_of: 21,
-            right_of: 22,
-            signaltype: 23,
-            ACTOR: 24,
-            linetype: 25,
-            arrowtype: 26,
-            LINE: 27,
-            DOTLINE: 28,
-            ARROW: 29,
-            OPENARROW: 30,
-            MESSAGE: 31,
+            signal_class: 12,
+            signal_id: 13,
+            note_statement: 14,
+            title: 15,
+            message: 16,
+            note: 17,
+            placement: 18,
+            actor: 19,
+            over: 20,
+            actor_pair: 21,
+            ",": 22,
+            left_of: 23,
+            right_of: 24,
+            signaltype: 25,
+            actor_class: 26,
+            actor_id: 27,
+            CLASS: 28,
+            ID: 29,
+            ACTOR: 30,
+            linetype: 31,
+            arrowtype: 32,
+            LINE: 33,
+            DOTLINE: 34,
+            ARROW: 35,
+            OPENARROW: 36,
+            MESSAGE: 37,
             $accept: 0,
             $end: 1
         },
@@ -261,21 +298,23 @@ var parser = function() {
             5: "EOF",
             8: "NL",
             9: "participant",
-            13: "title",
-            15: "note",
-            18: "over",
-            20: ",",
-            21: "left_of",
-            22: "right_of",
-            24: "ACTOR",
-            27: "LINE",
-            28: "DOTLINE",
-            29: "ARROW",
-            30: "OPENARROW",
-            31: "MESSAGE"
+            15: "title",
+            17: "note",
+            20: "over",
+            22: ",",
+            23: "left_of",
+            24: "right_of",
+            28: "CLASS",
+            29: "ID",
+            30: "ACTOR",
+            33: "LINE",
+            34: "DOTLINE",
+            35: "ARROW",
+            36: "OPENARROW",
+            37: "MESSAGE"
         },
-        productions_: [ 0, [ 3, 2 ], [ 4, 0 ], [ 4, 2 ], [ 6, 1 ], [ 6, 1 ], [ 7, 2 ], [ 7, 1 ], [ 7, 1 ], [ 7, 2 ], [ 12, 4 ], [ 12, 4 ], [ 19, 1 ], [ 19, 3 ], [ 16, 1 ], [ 16, 1 ], [ 11, 4 ], [ 17, 1 ], [ 10, 1 ], [ 23, 2 ], [ 23, 1 ], [ 25, 1 ], [ 25, 1 ], [ 26, 1 ], [ 26, 1 ], [ 14, 1 ] ],
-        performAction: function(yytext, yyleng, yylineno, yy, yystate, $$, _$) {
+        productions_: [ 0, [ 3, 2 ], [ 4, 0 ], [ 4, 2 ], [ 6, 1 ], [ 6, 1 ], [ 7, 2 ], [ 7, 1 ], [ 7, 1 ], [ 7, 1 ], [ 7, 1 ], [ 7, 2 ], [ 14, 4 ], [ 14, 4 ], [ 21, 1 ], [ 21, 3 ], [ 18, 1 ], [ 18, 1 ], [ 11, 4 ], [ 12, 4 ], [ 13, 4 ], [ 26, 2 ], [ 27, 2 ], [ 19, 1 ], [ 10, 1 ], [ 25, 2 ], [ 25, 1 ], [ 31, 1 ], [ 31, 1 ], [ 32, 1 ], [ 32, 1 ], [ 16, 1 ] ],
+        performAction: function(yytext, yyleng, yylineno, yy, yystate /* action[1] */, $$ /* vstack */, _$ /* lstack */) {
             /* this == yyval */
             var $0 = $$.length - 1;
             switch (yystate) {
@@ -291,71 +330,83 @@ var parser = function() {
 
               case 7:
               case 8:
+              case 9:
+              case 10:
                 yy.parser.yy.addSignal($$[$0]);
                 break;
 
-              case 9:
+              case 11:
                 yy.parser.yy.setTitle($$[$0]);
                 break;
 
-              case 10:
+              case 12:
                 this.$ = new Diagram.Note($$[$0 - 1], $$[$0 - 2], $$[$0]);
                 break;
 
-              case 11:
+              case 13:
                 this.$ = new Diagram.Note($$[$0 - 1], Diagram.PLACEMENT.OVER, $$[$0]);
                 break;
 
-              case 12:
-              case 20:
+              case 14:
+              case 26:
                 this.$ = $$[$0];
                 break;
 
-              case 13:
+              case 15:
                 this.$ = [ $$[$0 - 2], $$[$0] ];
                 break;
 
-              case 14:
+              case 16:
                 this.$ = Diagram.PLACEMENT.LEFTOF;
                 break;
 
-              case 15:
+              case 17:
                 this.$ = Diagram.PLACEMENT.RIGHTOF;
                 break;
 
-              case 16:
+              case 18:
+              case 19:
+              case 20:
                 this.$ = new Diagram.Signal($$[$0 - 3], $$[$0 - 2], $$[$0 - 1], $$[$0]);
                 break;
 
-              case 17:
-                this.$ = yy.parser.yy.getActor(Diagram.unescape($$[$0]));
-                break;
-
-              case 18:
-                this.$ = yy.parser.yy.getActorWithAlias(Diagram.unescape($$[$0]));
-                break;
-
-              case 19:
-                this.$ = $$[$0 - 1] | $$[$0] << 2;
-                break;
-
               case 21:
-                this.$ = Diagram.LINETYPE.SOLID;
+                this.$ = yy.parser.yy.addClass(Diagram.unescape($$[$0 - 1], $$[$0]));
                 break;
 
               case 22:
-                this.$ = Diagram.LINETYPE.DOTTED;
+                this.$ = yy.parser.yy.addID(Diagram.unescape($$[$0 - 1], $$[$0]));
                 break;
 
               case 23:
-                this.$ = Diagram.ARROWTYPE.FILLED;
+                this.$ = yy.parser.yy.getActor(Diagram.unescape($$[$0]));
                 break;
 
               case 24:
-                this.$ = Diagram.ARROWTYPE.OPEN;
+                this.$ = yy.parser.yy.getActorWithAlias(Diagram.unescape($$[$0]));
                 break;
 
               case 25:
+                this.$ = $$[$0 - 1] | $$[$0] << 2;
+                break;
+
+              case 27:
+                this.$ = Diagram.LINETYPE.SOLID;
+                break;
+
+              case 28:
+                this.$ = Diagram.LINETYPE.DOTTED;
+                break;
+
+              case 29:
+                this.$ = Diagram.ARROWTYPE.FILLED;
+                break;
+
+              case 30:
+                this.$ = Diagram.ARROWTYPE.OPEN;
+                break;
+
+              case 31:
                 this.$ = Diagram.unescape($$[$0].substring(1));
             }
         },
@@ -372,107 +423,137 @@ var parser = function() {
             9: [ 1, 7 ],
             11: 8,
             12: 9,
-            13: [ 1, 10 ],
+            13: 10,
+            14: 11,
             15: [ 1, 12 ],
-            17: 11,
-            24: $V1
+            17: [ 1, 16 ],
+            19: 13,
+            26: 14,
+            27: 15,
+            30: $V1
         }, {
             1: [ 2, 1 ]
         }, o($V0, [ 2, 3 ]), o($V0, [ 2, 4 ]), o($V0, [ 2, 5 ]), {
-            10: 14,
-            24: [ 1, 15 ]
-        }, o($V0, [ 2, 7 ]), o($V0, [ 2, 8 ]), {
-            14: 16,
-            31: $V2
+            10: 18,
+            30: [ 1, 19 ]
+        }, o($V0, [ 2, 7 ]), o($V0, [ 2, 8 ]), o($V0, [ 2, 9 ]), o($V0, [ 2, 10 ]), {
+            16: 20,
+            37: $V2
         }, {
-            23: 18,
-            25: 19,
-            27: [ 1, 20 ],
-            28: [ 1, 21 ]
+            25: 22,
+            28: $V3,
+            29: $V4,
+            31: 25,
+            33: $V5,
+            34: $V6
         }, {
-            16: 22,
-            18: [ 1, 23 ],
-            21: [ 1, 24 ],
-            22: [ 1, 25 ]
-        }, o([ 20, 27, 28, 31 ], [ 2, 17 ]), o($V0, [ 2, 6 ]), o($V0, [ 2, 18 ]), o($V0, [ 2, 9 ]), o($V0, [ 2, 25 ]), {
-            17: 26,
-            24: $V1
+            25: 28,
+            31: 25,
+            33: $V5,
+            34: $V6
         }, {
-            24: [ 2, 20 ],
-            26: 27,
-            29: [ 1, 28 ],
-            30: [ 1, 29 ]
-        }, o($V3, [ 2, 21 ]), o($V3, [ 2, 22 ]), {
-            17: 30,
-            24: $V1
+            25: 29,
+            31: 25,
+            33: $V5,
+            34: $V6
         }, {
-            17: 32,
-            19: 31,
-            24: $V1
+            18: 30,
+            20: [ 1, 31 ],
+            23: [ 1, 32 ],
+            24: [ 1, 33 ]
+        }, o([ 22, 28, 29, 33, 34, 37 ], [ 2, 23 ]), o($V0, [ 2, 6 ]), o($V0, [ 2, 24 ]), o($V0, [ 2, 11 ]), o($V0, [ 2, 31 ]), {
+            19: 34,
+            30: $V1
+        }, o($V7, [ 2, 21 ]), o($V7, [ 2, 22 ]), {
+            30: [ 2, 26 ],
+            32: 35,
+            35: [ 1, 36 ],
+            36: [ 1, 37 ]
+        }, o($V8, [ 2, 27 ]), o($V8, [ 2, 28 ]), {
+            19: 39,
+            26: 38,
+            30: $V1
         }, {
-            24: [ 2, 14 ]
+            19: 41,
+            27: 40,
+            30: $V1
         }, {
-            24: [ 2, 15 ]
+            19: 42,
+            30: $V1
         }, {
-            14: 33,
-            31: $V2
+            19: 44,
+            21: 43,
+            30: $V1
         }, {
-            24: [ 2, 19 ]
+            30: [ 2, 16 ]
         }, {
-            24: [ 2, 23 ]
+            30: [ 2, 17 ]
         }, {
-            24: [ 2, 24 ]
+            16: 45,
+            37: $V2
         }, {
-            14: 34,
-            31: $V2
+            30: [ 2, 25 ]
         }, {
-            14: 35,
-            31: $V2
+            30: [ 2, 29 ]
         }, {
-            20: [ 1, 36 ],
-            31: [ 2, 12 ]
-        }, o($V0, [ 2, 16 ]), o($V0, [ 2, 10 ]), o($V0, [ 2, 11 ]), {
-            17: 37,
-            24: $V1
+            30: [ 2, 30 ]
         }, {
-            31: [ 2, 13 ]
+            16: 46,
+            37: $V2
+        }, {
+            28: $V3
+        }, {
+            16: 47,
+            37: $V2
+        }, {
+            29: $V4
+        }, {
+            16: 48,
+            37: $V2
+        }, {
+            16: 49,
+            37: $V2
+        }, {
+            22: [ 1, 50 ],
+            37: [ 2, 14 ]
+        }, o($V0, [ 2, 18 ]), o($V0, [ 2, 19 ]), o($V0, [ 2, 20 ]), o($V0, [ 2, 12 ]), o($V0, [ 2, 13 ]), {
+            19: 51,
+            30: $V1
+        }, {
+            37: [ 2, 15 ]
         } ],
         defaultActions: {
             3: [ 2, 1 ],
-            24: [ 2, 14 ],
-            25: [ 2, 15 ],
-            27: [ 2, 19 ],
-            28: [ 2, 23 ],
-            29: [ 2, 24 ],
-            37: [ 2, 13 ]
+            32: [ 2, 16 ],
+            33: [ 2, 17 ],
+            35: [ 2, 25 ],
+            36: [ 2, 29 ],
+            37: [ 2, 30 ],
+            51: [ 2, 15 ]
         },
         parseError: function(str, hash) {
             if (!hash.recoverable) throw new Error(str);
             this.trace(str);
         },
         parse: function(input) {
-            function lex() {
-                var token;
-                return token = lexer.lex() || EOF, "number" != typeof token && (token = self.symbols_[token] || token), 
-                token;
-            }
-            var self = this, stack = [ 0 ], vstack = [ null ], lstack = [], table = this.table, yytext = "", yylineno = 0, yyleng = 0, recovering = 0, TERROR = 2, EOF = 1, args = lstack.slice.call(arguments, 1), lexer = Object.create(this.lexer), sharedState = {
+            var k, self = this, stack = [ 0 ], vstack = [ null ], lstack = [], table = this.table, yytext = "", yylineno = 0, yyleng = 0, recovering = 0, args = lstack.slice.call(arguments, 1), lexer = Object.create(this.lexer), sharedState = {
                 yy: {}
             };
-            for (var k in this.yy) Object.prototype.hasOwnProperty.call(this.yy, k) && (sharedState.yy[k] = this.yy[k]);
-            lexer.setInput(input, sharedState.yy), sharedState.yy.lexer = lexer, sharedState.yy.parser = this, 
-            "undefined" == typeof lexer.yylloc && (lexer.yylloc = {});
-            var yyloc = lexer.yylloc;
-            lstack.push(yyloc);
-            var ranges = lexer.options && lexer.options.ranges;
+            for (k in this.yy) Object.prototype.hasOwnProperty.call(this.yy, k) && (sharedState.yy[k] = this.yy[k]);
+            lexer.setInput(input, sharedState.yy), sharedState.yy.lexer = lexer, 
+            sharedState.yy.parser = this, void 0 === lexer.yylloc && (lexer.yylloc = {});
+            var yyloc = lexer.yylloc, ranges = (lstack.push(yyloc), lexer.options && lexer.options.ranges);
+            function lex() {
+                var token = lexer.lex() || 1;
+                return token = "number" != typeof token ? self.symbols_[token] || token : token;
+            }
             "function" == typeof sharedState.yy.parseError ? this.parseError = sharedState.yy.parseError : this.parseError = Object.getPrototypeOf(this).parseError;
-            for (var symbol, preErrorSymbol, state, action, r, p, len, newState, expected, yyval = {}; ;) {
-                if (state = stack[stack.length - 1], this.defaultActions[state] ? action = this.defaultActions[state] : (null !== symbol && "undefined" != typeof symbol || (symbol = lex()), 
-                action = table[state] && table[state][symbol]), "undefined" == typeof action || !action.length || !action[0]) {
-                    var errStr = "";
-                    expected = [];
-                    for (p in table[state]) this.terminals_[p] && p > TERROR && expected.push("'" + this.terminals_[p] + "'");
-                    errStr = lexer.showPosition ? "Parse error on line " + (yylineno + 1) + ":\n" + lexer.showPosition() + "\nExpecting " + expected.join(", ") + ", got '" + (this.terminals_[symbol] || symbol) + "'" : "Parse error on line " + (yylineno + 1) + ": Unexpected " + (symbol == EOF ? "end of input" : "'" + (this.terminals_[symbol] || symbol) + "'"), 
+            for (var symbol, preErrorSymbol, state, action, p, len, r, yyval = {}; ;) {
+                if (state = stack[stack.length - 1], void 0 === (action = this.defaultActions[state] || (null == symbol && (symbol = lex()), 
+                table[state] && table[state][symbol])) || !action.length || !action[0]) {
+                    var errStr = "", expected = [];
+                    for (p in table[state]) this.terminals_[p] && 2 < p && expected.push("'" + this.terminals_[p] + "'");
+                    errStr = lexer.showPosition ? "Parse error on line " + (yylineno + 1) + ":\n" + lexer.showPosition() + "\nExpecting " + expected.join(", ") + ", got '" + (this.terminals_[symbol] || symbol) + "'" : "Parse error on line " + (yylineno + 1) + ": Unexpected " + (1 == symbol ? "end of input" : "'" + (this.terminals_[symbol] || symbol) + "'"), 
                     this.parseError(errStr, {
                         text: lexer.match,
                         token: this.terminals_[symbol] || symbol,
@@ -481,12 +562,13 @@ var parser = function() {
                         expected: expected
                     });
                 }
-                if (action[0] instanceof Array && action.length > 1) throw new Error("Parse Error: multiple actions possible at state: " + state + ", token: " + symbol);
+                if (action[0] instanceof Array && 1 < action.length) throw new Error("Parse Error: multiple actions possible at state: " + state + ", token: " + symbol);
                 switch (action[0]) {
                   case 1:
-                    stack.push(symbol), vstack.push(lexer.yytext), lstack.push(lexer.yylloc), stack.push(action[1]), 
-                    symbol = null, preErrorSymbol ? (symbol = preErrorSymbol, preErrorSymbol = null) : (yyleng = lexer.yyleng, 
-                    yytext = lexer.yytext, yylineno = lexer.yylineno, yyloc = lexer.yylloc, recovering > 0 && recovering--);
+                    stack.push(symbol), vstack.push(lexer.yytext), lstack.push(lexer.yylloc), 
+                    stack.push(action[1]), symbol = null, preErrorSymbol ? (symbol = preErrorSymbol, 
+                    preErrorSymbol = null) : (yyleng = lexer.yyleng, yytext = lexer.yytext, 
+                    yylineno = lexer.yylineno, yyloc = lexer.yylloc, 0 < recovering && recovering--);
                     break;
 
                   case 2:
@@ -497,12 +579,11 @@ var parser = function() {
                         first_column: lstack[lstack.length - (len || 1)].first_column,
                         last_column: lstack[lstack.length - 1].last_column
                     }, ranges && (yyval._$.range = [ lstack[lstack.length - (len || 1)].range[0], lstack[lstack.length - 1].range[1] ]), 
-                    r = this.performAction.apply(yyval, [ yytext, yyleng, yylineno, sharedState.yy, action[1], vstack, lstack ].concat(args)), 
-                    "undefined" != typeof r) return r;
+                    void 0 !== (r = this.performAction.apply(yyval, [ yytext, yyleng, yylineno, sharedState.yy, action[1], vstack, lstack ].concat(args)))) return r;
                     len && (stack = stack.slice(0, -1 * len * 2), vstack = vstack.slice(0, -1 * len), 
                     lstack = lstack.slice(0, -1 * len)), stack.push(this.productions_[action[1]][0]), 
-                    vstack.push(yyval.$), lstack.push(yyval._$), newState = table[stack[stack.length - 2]][stack[stack.length - 1]], 
-                    stack.push(newState);
+                    vstack.push(yyval.$), lstack.push(yyval._$), r = table[stack[stack.length - 2]][stack[stack.length - 1]], 
+                    stack.push(r);
                     break;
 
                   case 3:
@@ -511,255 +592,255 @@ var parser = function() {
             }
             return !0;
         }
-    }, lexer = function() {
-        var lexer = {
-            EOF: 1,
-            parseError: function(str, hash) {
-                if (!this.yy.parser) throw new Error(str);
-                this.yy.parser.parseError(str, hash);
-            },
-            // resets the lexer, sets new input
-            setInput: function(input, yy) {
-                return this.yy = yy || this.yy || {}, this._input = input, this._more = this._backtrack = this.done = !1, 
-                this.yylineno = this.yyleng = 0, this.yytext = this.matched = this.match = "", this.conditionStack = [ "INITIAL" ], 
-                this.yylloc = {
-                    first_line: 1,
-                    first_column: 0,
-                    last_line: 1,
-                    last_column: 0
-                }, this.options.ranges && (this.yylloc.range = [ 0, 0 ]), this.offset = 0, this;
-            },
-            // consumes and returns one char from the input
-            input: function() {
-                var ch = this._input[0];
-                this.yytext += ch, this.yyleng++, this.offset++, this.match += ch, this.matched += ch;
-                var lines = ch.match(/(?:\r\n?|\n).*/g);
-                return lines ? (this.yylineno++, this.yylloc.last_line++) : this.yylloc.last_column++, 
-                this.options.ranges && this.yylloc.range[1]++, this._input = this._input.slice(1), 
-                ch;
-            },
-            // unshifts one char (or a string) into the input
-            unput: function(ch) {
-                var len = ch.length, lines = ch.split(/(?:\r\n?|\n)/g);
-                this._input = ch + this._input, this.yytext = this.yytext.substr(0, this.yytext.length - len), 
-                //this.yyleng -= len;
-                this.offset -= len;
-                var oldLines = this.match.split(/(?:\r\n?|\n)/g);
-                this.match = this.match.substr(0, this.match.length - 1), this.matched = this.matched.substr(0, this.matched.length - 1), 
-                lines.length - 1 && (this.yylineno -= lines.length - 1);
-                var r = this.yylloc.range;
-                return this.yylloc = {
+    };
+    function Parser() {
+        this.yy = {};
+    }
+    return $V5.lexer = {
+        EOF: 1,
+        parseError: function(str, hash) {
+            if (!this.yy.parser) throw new Error(str);
+            this.yy.parser.parseError(str, hash);
+        },
+        // resets the lexer, sets new input
+        setInput: function(input, yy) {
+            return this.yy = yy || this.yy || {}, this._input = input, this._more = this._backtrack = this.done = !1, 
+            this.yylineno = this.yyleng = 0, this.yytext = this.matched = this.match = "", 
+            this.conditionStack = [ "INITIAL" ], this.yylloc = {
+                first_line: 1,
+                first_column: 0,
+                last_line: 1,
+                last_column: 0
+            }, this.options.ranges && (this.yylloc.range = [ 0, 0 ]), this.offset = 0, 
+            this;
+        },
+        // consumes and returns one char from the input
+        input: function() {
+            var ch = this._input[0];
+            return this.yytext += ch, this.yyleng++, this.offset++, this.match += ch, 
+            this.matched += ch, ch.match(/(?:\r\n?|\n).*/g) ? (this.yylineno++, 
+            this.yylloc.last_line++) : this.yylloc.last_column++, this.options.ranges && this.yylloc.range[1]++, 
+            this._input = this._input.slice(1), ch;
+        },
+        // unshifts one char (or a string) into the input
+        unput: function(ch) {
+            var len = ch.length, lines = ch.split(/(?:\r\n?|\n)/g), ch = (this._input = ch + this._input, 
+            this.yytext = this.yytext.substr(0, this.yytext.length - len), 
+            //this.yyleng -= len;
+            this.offset -= len, this.match.split(/(?:\r\n?|\n)/g)), r = (this.match = this.match.substr(0, this.match.length - 1), 
+            this.matched = this.matched.substr(0, this.matched.length - 1), lines.length - 1 && (this.yylineno -= lines.length - 1), 
+            this.yylloc.range);
+            return this.yylloc = {
+                first_line: this.yylloc.first_line,
+                last_line: this.yylineno + 1,
+                first_column: this.yylloc.first_column,
+                last_column: lines ? (lines.length === ch.length ? this.yylloc.first_column : 0) + ch[ch.length - lines.length].length - lines[0].length : this.yylloc.first_column - len
+            }, this.options.ranges && (this.yylloc.range = [ r[0], r[0] + this.yyleng - len ]), 
+            this.yyleng = this.yytext.length, this;
+        },
+        // When called from action, caches matched text and appends it on next action
+        more: function() {
+            return this._more = !0, this;
+        },
+        // When called from action, signals the lexer that this rule fails to match the input, so the next matching rule (regex) should be tested instead.
+        reject: function() {
+            return this.options.backtrack_lexer ? (this._backtrack = !0, this) : this.parseError("Lexical error on line " + (this.yylineno + 1) + ". You can only invoke reject() in the lexer when the lexer is of the backtracking persuasion (options.backtrack_lexer = true).\n" + this.showPosition(), {
+                text: "",
+                token: null,
+                line: this.yylineno
+            });
+        },
+        // retain first n characters of the match
+        less: function(n) {
+            this.unput(this.match.slice(n));
+        },
+        // displays already matched input, i.e. for error messages
+        pastInput: function() {
+            var past = this.matched.substr(0, this.matched.length - this.match.length);
+            return (20 < past.length ? "..." : "") + past.substr(-20).replace(/\n/g, "");
+        },
+        // displays upcoming input, i.e. for error messages
+        upcomingInput: function() {
+            var next = this.match;
+            return next.length < 20 && (next += this._input.substr(0, 20 - next.length)), 
+            (next.substr(0, 20) + (20 < next.length ? "..." : "")).replace(/\n/g, "");
+        },
+        // displays the character position where the lexing error occurred, i.e. for error messages
+        showPosition: function() {
+            var pre = this.pastInput(), c = new Array(pre.length + 1).join("-");
+            return pre + this.upcomingInput() + "\n" + c + "^";
+        },
+        // test the lexed token: return FALSE when not a match, otherwise return token
+        test_match: function(match, indexed_rule) {
+            var lines, backup;
+            if (this.options.backtrack_lexer && (
+            // save context
+            backup = {
+                yylineno: this.yylineno,
+                yylloc: {
                     first_line: this.yylloc.first_line,
-                    last_line: this.yylineno + 1,
+                    last_line: this.last_line,
                     first_column: this.yylloc.first_column,
-                    last_column: lines ? (lines.length === oldLines.length ? this.yylloc.first_column : 0) + oldLines[oldLines.length - lines.length].length - lines[0].length : this.yylloc.first_column - len
-                }, this.options.ranges && (this.yylloc.range = [ r[0], r[0] + this.yyleng - len ]), 
-                this.yyleng = this.yytext.length, this;
-            },
-            // When called from action, caches matched text and appends it on next action
-            more: function() {
-                return this._more = !0, this;
-            },
-            // When called from action, signals the lexer that this rule fails to match the input, so the next matching rule (regex) should be tested instead.
-            reject: function() {
-                return this.options.backtrack_lexer ? (this._backtrack = !0, this) : this.parseError("Lexical error on line " + (this.yylineno + 1) + ". You can only invoke reject() in the lexer when the lexer is of the backtracking persuasion (options.backtrack_lexer = true).\n" + this.showPosition(), {
-                    text: "",
-                    token: null,
-                    line: this.yylineno
-                });
-            },
-            // retain first n characters of the match
-            less: function(n) {
-                this.unput(this.match.slice(n));
-            },
-            // displays already matched input, i.e. for error messages
-            pastInput: function() {
-                var past = this.matched.substr(0, this.matched.length - this.match.length);
-                return (past.length > 20 ? "..." : "") + past.substr(-20).replace(/\n/g, "");
-            },
-            // displays upcoming input, i.e. for error messages
-            upcomingInput: function() {
-                var next = this.match;
-                return next.length < 20 && (next += this._input.substr(0, 20 - next.length)), (next.substr(0, 20) + (next.length > 20 ? "..." : "")).replace(/\n/g, "");
-            },
-            // displays the character position where the lexing error occurred, i.e. for error messages
-            showPosition: function() {
-                var pre = this.pastInput(), c = new Array(pre.length + 1).join("-");
-                return pre + this.upcomingInput() + "\n" + c + "^";
-            },
-            // test the lexed token: return FALSE when not a match, otherwise return token
-            test_match: function(match, indexed_rule) {
-                var token, lines, backup;
-                if (this.options.backtrack_lexer && (// save context
-                backup = {
-                    yylineno: this.yylineno,
-                    yylloc: {
-                        first_line: this.yylloc.first_line,
-                        last_line: this.last_line,
-                        first_column: this.yylloc.first_column,
-                        last_column: this.yylloc.last_column
-                    },
-                    yytext: this.yytext,
-                    match: this.match,
-                    matches: this.matches,
-                    matched: this.matched,
-                    yyleng: this.yyleng,
-                    offset: this.offset,
-                    _more: this._more,
-                    _input: this._input,
-                    yy: this.yy,
-                    conditionStack: this.conditionStack.slice(0),
-                    done: this.done
-                }, this.options.ranges && (backup.yylloc.range = this.yylloc.range.slice(0))), lines = match[0].match(/(?:\r\n?|\n).*/g), 
-                lines && (this.yylineno += lines.length), this.yylloc = {
-                    first_line: this.yylloc.last_line,
-                    last_line: this.yylineno + 1,
-                    first_column: this.yylloc.last_column,
-                    last_column: lines ? lines[lines.length - 1].length - lines[lines.length - 1].match(/\r?\n?/)[0].length : this.yylloc.last_column + match[0].length
-                }, this.yytext += match[0], this.match += match[0], this.matches = match, this.yyleng = this.yytext.length, 
-                this.options.ranges && (this.yylloc.range = [ this.offset, this.offset += this.yyleng ]), 
-                this._more = !1, this._backtrack = !1, this._input = this._input.slice(match[0].length), 
-                this.matched += match[0], token = this.performAction.call(this, this.yy, this, indexed_rule, this.conditionStack[this.conditionStack.length - 1]), 
-                this.done && this._input && (this.done = !1), token) return token;
-                if (this._backtrack) {
-                    // recover context
-                    for (var k in backup) this[k] = backup[k];
-                    return !1;
-                }
-                return !1;
-            },
-            // return next match in input
-            next: function() {
-                if (this.done) return this.EOF;
-                this._input || (this.done = !0);
-                var token, match, tempMatch, index;
-                this._more || (this.yytext = "", this.match = "");
-                for (var rules = this._currentRules(), i = 0; i < rules.length; i++) if (tempMatch = this._input.match(this.rules[rules[i]]), 
-                tempMatch && (!match || tempMatch[0].length > match[0].length)) {
-                    if (match = tempMatch, index = i, this.options.backtrack_lexer) {
-                        if (token = this.test_match(tempMatch, rules[i]), token !== !1) return token;
-                        if (this._backtrack) {
-                            match = !1;
-                            continue;
-                        }
-                        // else: this is a lexer rule which consumes input without producing a token (e.g. whitespace)
-                        return !1;
-                    }
-                    if (!this.options.flex) break;
-                }
-                return match ? (token = this.test_match(match, rules[index]), token !== !1 && token) : "" === this._input ? this.EOF : this.parseError("Lexical error on line " + (this.yylineno + 1) + ". Unrecognized text.\n" + this.showPosition(), {
-                    text: "",
-                    token: null,
-                    line: this.yylineno
-                });
-            },
-            // return next match that has a token
-            lex: function() {
-                var r = this.next();
-                return r ? r : this.lex();
-            },
-            // activates a new lexer condition state (pushes the new lexer condition state onto the condition stack)
-            begin: function(condition) {
-                this.conditionStack.push(condition);
-            },
-            // pop the previously active lexer condition state off the condition stack
-            popState: function() {
-                var n = this.conditionStack.length - 1;
-                return n > 0 ? this.conditionStack.pop() : this.conditionStack[0];
-            },
-            // produce the lexer rule set which is active for the currently active lexer condition state
-            _currentRules: function() {
-                return this.conditionStack.length && this.conditionStack[this.conditionStack.length - 1] ? this.conditions[this.conditionStack[this.conditionStack.length - 1]].rules : this.conditions.INITIAL.rules;
-            },
-            // return the currently active lexer condition state; when an index argument is provided it produces the N-th previous condition state, if available
-            topState: function(n) {
-                return n = this.conditionStack.length - 1 - Math.abs(n || 0), n >= 0 ? this.conditionStack[n] : "INITIAL";
-            },
-            // alias for begin(condition)
-            pushState: function(condition) {
-                this.begin(condition);
-            },
-            // return the number of states currently on the stack
-            stateStackSize: function() {
-                return this.conditionStack.length;
-            },
-            options: {
-                "case-insensitive": !0
-            },
-            performAction: function(yy, yy_, $avoiding_name_collisions, YY_START) {
-                switch ($avoiding_name_collisions) {
-                  case 0:
-                    return 8;
-
-                  case 1:
-                    /* skip whitespace */
-                    break;
-
-                  case 2:
-                    /* skip comments */
-                    break;
-
-                  case 3:
-                    return 9;
-
-                  case 4:
-                    return 21;
-
-                  case 5:
-                    return 22;
-
-                  case 6:
-                    return 18;
-
-                  case 7:
-                    return 15;
-
-                  case 8:
-                    return 13;
-
-                  case 9:
-                    return 20;
-
-                  case 10:
-                    return 24;
-
-                  case 11:
-                    return 24;
-
-                  case 12:
-                    return 28;
-
-                  case 13:
-                    return 27;
-
-                  case 14:
-                    return 30;
-
-                  case 15:
-                    return 29;
-
-                  case 16:
-                    return 31;
-
-                  case 17:
-                    return 5;
-
-                  case 18:
-                    return "INVALID";
-                }
-            },
-            rules: [ /^(?:[\r\n]+)/i, /^(?:\s+)/i, /^(?:#[^\r\n]*)/i, /^(?:participant\b)/i, /^(?:left of\b)/i, /^(?:right of\b)/i, /^(?:over\b)/i, /^(?:note\b)/i, /^(?:title\b)/i, /^(?:,)/i, /^(?:[^\->:,\r\n"]+)/i, /^(?:"[^"]+")/i, /^(?:--)/i, /^(?:-)/i, /^(?:>>)/i, /^(?:>)/i, /^(?:[^\r\n]+)/i, /^(?:$)/i, /^(?:.)/i ],
-            conditions: {
-                INITIAL: {
-                    rules: [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18 ],
-                    inclusive: !0
-                }
+                    last_column: this.yylloc.last_column
+                },
+                yytext: this.yytext,
+                match: this.match,
+                matches: this.matches,
+                matched: this.matched,
+                yyleng: this.yyleng,
+                offset: this.offset,
+                _more: this._more,
+                _input: this._input,
+                yy: this.yy,
+                conditionStack: this.conditionStack.slice(0),
+                done: this.done
+            }, this.options.ranges && (backup.yylloc.range = this.yylloc.range.slice(0))), 
+            (lines = match[0].match(/(?:\r\n?|\n).*/g)) && (this.yylineno += lines.length), 
+            this.yylloc = {
+                first_line: this.yylloc.last_line,
+                last_line: this.yylineno + 1,
+                first_column: this.yylloc.last_column,
+                last_column: lines ? lines[lines.length - 1].length - lines[lines.length - 1].match(/\r?\n?/)[0].length : this.yylloc.last_column + match[0].length
+            }, this.yytext += match[0], this.match += match[0], this.matches = match, 
+            this.yyleng = this.yytext.length, this.options.ranges && (this.yylloc.range = [ this.offset, this.offset += this.yyleng ]), 
+            this._more = !1, this._backtrack = !1, this._input = this._input.slice(match[0].length), 
+            this.matched += match[0], lines = this.performAction.call(this, this.yy, this, indexed_rule, this.conditionStack[this.conditionStack.length - 1]), 
+            this.done && this._input && (this.done = !1), lines) return lines;
+            if (this._backtrack) {
+                // recover context
+                for (var k in backup) this[k] = backup[k];
+                return !1; // rule action called reject() implying the next rule should be tested instead.
             }
-        };
-        return lexer;
-    }();
-    return parser.lexer = lexer, Parser.prototype = parser, parser.Parser = Parser, 
-    new Parser();
+            return !1;
+        },
+        // return next match in input
+        next: function() {
+            if (this.done) return this.EOF;
+            this._input || (this.done = !0), this._more || (this.yytext = "", this.match = "");
+            for (var token, match, tempMatch, index, rules = this._currentRules(), i = 0; i < rules.length; i++) if ((tempMatch = this._input.match(this.rules[rules[i]])) && (!match || tempMatch[0].length > match[0].length)) if (match = tempMatch, 
+            index = i, this.options.backtrack_lexer) {
+                if (!1 !== (token = this.test_match(tempMatch, rules[i]))) return token;
+                if (!this._backtrack) 
+                // else: this is a lexer rule which consumes input without producing a token (e.g. whitespace)
+                return !1;
+                match = !1;
+            } else if (!this.options.flex) break;
+            return match ? !1 !== (token = this.test_match(match, rules[index])) && token : "" === this._input ? this.EOF : this.parseError("Lexical error on line " + (this.yylineno + 1) + ". Unrecognized text.\n" + this.showPosition(), {
+                text: "",
+                token: null,
+                line: this.yylineno
+            });
+        },
+        // return next match that has a token
+        lex: function() {
+            var r = this.next();
+            return r || this.lex();
+        },
+        // activates a new lexer condition state (pushes the new lexer condition state onto the condition stack)
+        begin: function(condition) {
+            this.conditionStack.push(condition);
+        },
+        // pop the previously active lexer condition state off the condition stack
+        popState: function() {
+            return 0 < this.conditionStack.length - 1 ? this.conditionStack.pop() : this.conditionStack[0];
+        },
+        // produce the lexer rule set which is active for the currently active lexer condition state
+        _currentRules: function() {
+            return (this.conditionStack.length && this.conditionStack[this.conditionStack.length - 1] ? this.conditions[this.conditionStack[this.conditionStack.length - 1]] : this.conditions.INITIAL).rules;
+        },
+        // return the currently active lexer condition state; when an index argument is provided it produces the N-th previous condition state, if available
+        topState: function(n) {
+            return 0 <= (n = this.conditionStack.length - 1 - Math.abs(n || 0)) ? this.conditionStack[n] : "INITIAL";
+        },
+        // alias for begin(condition)
+        pushState: function(condition) {
+            this.begin(condition);
+        },
+        // return the number of states currently on the stack
+        stateStackSize: function() {
+            return this.conditionStack.length;
+        },
+        options: {
+            "case-insensitive": !0
+        },
+        performAction: function(yy, yy_, $avoiding_name_collisions, YY_START) {
+            switch ($avoiding_name_collisions) {
+              case 0:
+                return 8;
+
+              case 1:
+              case 2:
+                /* skip comments */
+                break;
+
+              case 3:
+                return 9;
+
+              case 4:
+                return 23;
+
+              case 5:
+                return 24;
+
+              case 6:
+                return 20;
+
+              case 7:
+                return 17;
+
+              case 8:
+                return this.begin("title"), 15;
+
+              case 9:
+                return this.popState(), 37;
+
+              case 10:
+                return 22;
+
+              case 11:
+              case 12:
+                return 30;
+
+              case 13:
+                return 28;
+
+              case 14:
+                return 29;
+
+              case 15:
+                return 34;
+
+              case 16:
+                return 33;
+
+              case 17:
+                return 36;
+
+              case 18:
+                return 35;
+
+              case 19:
+                return 37;
+
+              case 20:
+                return 5;
+
+              case 21:
+                return "INVALID";
+            }
+        },
+        rules: [ /^(?:[\r\n]+)/i, /^(?:\s+)/i, /^(?:#[^\r\n]*)/i, /^(?:participant\b)/i, /^(?:left of\b)/i, /^(?:right of\b)/i, /^(?:over\b)/i, /^(?:note\b)/i, /^(?:title\b)/i, /^(?:[^\r\n]+)/i, /^(?:,)/i, /^(?:[^\->:,\r\n\|"]+)/i, /^(?:"[^"]+")/i, /^(?:\\[\.[^\]]+)/i, /^(?:\\[#[^\]]+)/i, /^(?:--)/i, /^(?:-)/i, /^(?:>>)/i, /^(?:>)/i, /^(?:[^\r\n]+)/i, /^(?:$)/i, /^(?:.)/i ],
+        conditions: {
+            title: {
+                rules: [ 9 ],
+                inclusive: !1
+            },
+            INITIAL: {
+                rules: [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21 ],
+                inclusive: !0
+            }
+        }
+    }, new ((Parser.prototype = $V5).Parser = Parser)();
 }();
 
 "undefined" != typeof require && "undefined" != typeof exports && (exports.parser = parser, 
@@ -767,8 +848,8 @@ exports.Parser = parser.Parser, exports.parse = function() {
     return parser.parse.apply(parser, arguments);
 }, exports.main = function(args) {
     args[1] || (console.log("Usage: " + args[0] + " FILE"), process.exit(1));
-    var source = require("fs").readFileSync(require("path").normalize(args[1]), "utf8");
-    return exports.parser.parse(source);
+    args = require("fs").readFileSync(require("path").normalize(args[1]), "utf8");
+    return exports.parser.parse(args);
 }, "undefined" != typeof module && require.main === module && exports.main(process.argv.slice(1)));
 /**
  * jison doesn't have a good exception, so we make one.
@@ -843,6 +924,8 @@ var ARROWTYPE = Diagram.ARROWTYPE;
 
 var ALIGN_LEFT   = 0;
 var ALIGN_CENTER = 1;
+var ALIGN_HORIZONTAL_CENTER = 2;
+var ALIGN_VERTICAL_CENTER = 3;
 
 function AssertException(message) { this.message = message; }
 AssertException.prototype.toString = function() {
@@ -1142,10 +1225,10 @@ _.extend(BaseTheme.prototype, {
     var y = offsetY;
     _.each(this.diagram.actors, _.bind(function(a) {
       // Top box
-      this.drawActor(a, y, this.actorsHeight_);
+      this.drawActor(a, y, this.actorsHeight_, 0);
 
       // Bottom box
-      this.drawActor(a, y + this.actorsHeight_ + this.signalsHeight_, this.actorsHeight_);
+      this.drawActor(a, y + this.actorsHeight_ + this.signalsHeight_, this.actorsHeight_, 1);
 
       // Veritical line
       var aX = getCenterX(a);
@@ -1181,24 +1264,28 @@ _.extend(BaseTheme.prototype, {
   },
 
   drawSelfSignal: function(signal, offsetY) {
-      assert(signal.isSelf(), 'signal must be a self signal');
+    assert(signal.isSelf(), 'signal must be a self signal');
 
-      var textBB = signal.textBB;
-      var aX = getCenterX(signal.actorA);
+    var textBB = signal.textBB;
+    var aX = getCenterX(signal.actorA);
 
-      var x = aX + SELF_SIGNAL_WIDTH + SIGNAL_PADDING;
-      var y = offsetY + SIGNAL_PADDING + signal.height / 2 + textBB.y;
+    var y1 = offsetY + SIGNAL_MARGIN + SIGNAL_PADDING;
+    var y2 = y1 + signal.height - 2 * SIGNAL_MARGIN - SIGNAL_PADDING;
 
-      this.drawText(x, y, signal.message, this.font_, ALIGN_LEFT);
+    // Draw three lines, the last one with a arrow
+    this.drawLine(aX, y1, aX + SELF_SIGNAL_WIDTH, y1, signal.linetype);
+    this.drawLine(aX + SELF_SIGNAL_WIDTH, y1, aX + SELF_SIGNAL_WIDTH, y2, signal.linetype);
+    this.drawLine(aX + SELF_SIGNAL_WIDTH, y2, aX, y2, signal.linetype, signal.arrowtype);
 
-      var y1 = offsetY + SIGNAL_MARGIN + SIGNAL_PADDING;
-      var y2 = y1 + signal.height - 2 * SIGNAL_MARGIN - SIGNAL_PADDING;
+    // Draw text
+    var x = aX + SELF_SIGNAL_WIDTH + SIGNAL_PADDING;
+    var arrowHeight = (y2 - y1);
+    var emptyVerticalSpace = arrowHeight - textBB.height;
+    var topPadding = emptyVerticalSpace / 2;
+    var y = y1 + topPadding;
 
-      // Draw three lines, the last one with a arrow
-      this.drawLine(aX, y1, aX + SELF_SIGNAL_WIDTH, y1, signal.linetype);
-      this.drawLine(aX + SELF_SIGNAL_WIDTH, y1, aX + SELF_SIGNAL_WIDTH, y2, signal.linetype);
-      this.drawLine(aX + SELF_SIGNAL_WIDTH, y2, aX, y2, signal.linetype, signal.arrowtype);
-    },
+    this.drawText(x, y, signal.message, this.font_, ALIGN_LEFT);
+  },
 
   drawSignal: function(signal, offsetY) {
     var aX = getCenterX(signal.actorA);
@@ -1206,13 +1293,15 @@ _.extend(BaseTheme.prototype, {
 
     // Mid point between actors
     var x = (bX - aX) / 2 + aX;
-    var y = offsetY + SIGNAL_MARGIN + 2 * SIGNAL_PADDING;
+    var y = offsetY + SIGNAL_MARGIN + SIGNAL_PADDING;
 
     // Draw the text in the middle of the signal
-    this.drawText(x, y, signal.message, this.font_, ALIGN_CENTER);
+    this.drawText(x, y, signal.message, this.font_, ALIGN_HORIZONTAL_CENTER);
 
     // Draw the line along the bottom of the signal
-    y = offsetY + signal.height - SIGNAL_MARGIN - SIGNAL_PADDING;
+    // Padding above, between message and line
+    // Margin below the line, between line and next signal
+    y = offsetY + signal.height - SIGNAL_PADDING;
     this.drawLine(aX, y, bX, y, signal.linetype, signal.arrowtype);
   },
 
@@ -1264,7 +1353,7 @@ _.extend(BaseTheme.prototype, {
       y += padding;
     }
 
-    return this.drawText(x, y, text, font, align);
+    return this.drawText(x, y, text, font, align, box.cls, box.id);
   }
 });
 
@@ -1286,10 +1375,10 @@ if (typeof Snap != 'undefined') {
   };
 
   var RECT = {
-        'stroke': '#000000',
-        'stroke-width': 2,
-        'fill': '#fff'
-      };
+    'stroke': '#000000',
+    'stroke-width': 2,
+    'fill': '#fff'
+  };
 
   var LOADED_FONTS = {};
 
@@ -1297,44 +1386,44 @@ if (typeof Snap != 'undefined') {
    * SnapTheme
    ******************/
 
-  var SnapTheme = function(diagram, options, resume) {
-        _.defaults(options, {
-            'css-class': 'simple',
-            'font-size': 16,
-            'font-family': 'Andale Mono, monospace'
-          });
+  var SnapTheme = function (diagram, options, resume) {
+    _.defaults(options, {
+      'css-class': 'simple',
+      'font-size': 16,
+      'font-family': 'Andale Mono, monospace'
+    });
 
-        this.init(diagram, options, resume);
-      };
+    this.init(diagram, options, resume);
+  };
 
   _.extend(SnapTheme.prototype, BaseTheme.prototype, {
 
-    init: function(diagram, options, resume) {
-            BaseTheme.prototype.init.call(this, diagram);
+    init: function (diagram, options, resume) {
+      BaseTheme.prototype.init.call(this, diagram);
 
-            this.paper_  = undefined;
-            this.cssClass_ = options['css-class'] || undefined;
-            this.font_ = {
-                'font-size': options['font-size'],
-                'font-family': options['font-family']
-              };
+      this.paper_ = undefined;
+      this.cssClass_ = options['css-class'] || undefined;
+      this.font_ = {
+        'font-size': options['font-size'],
+        'font-family': options['font-family']
+      };
 
-            var a = this.arrowTypes_ = {};
-            a[ARROWTYPE.FILLED] = 'Block';
-            a[ARROWTYPE.OPEN]   = 'Open';
+      var a = this.arrowTypes_ = {};
+      a[ARROWTYPE.FILLED] = 'Block';
+      a[ARROWTYPE.OPEN] = 'Open';
 
-            var l = this.lineTypes_ = {};
-            l[LINETYPE.SOLID]  = '';
-            l[LINETYPE.DOTTED] = '6,2';
+      var l = this.lineTypes_ = {};
+      l[LINETYPE.SOLID] = '';
+      l[LINETYPE.DOTTED] = '6,2';
 
-            var that = this;
-            this.waitForFont(function() {
-              resume(that);
-            });
-          },
+      var that = this;
+      this.waitForFont(function () {
+        resume(that);
+      });
+    },
 
     // Wait for loading of the font
-    waitForFont: function(callback) {
+    waitForFont: function (callback) {
       var fontFamily = this.font_['font-family'];
 
       if (typeof WebFont == 'undefined') {
@@ -1348,29 +1437,29 @@ if (typeof Snap != 'undefined') {
       }
 
       WebFont.load({
-          custom: {
-              families: [fontFamily] // TODO replace this with something that reads the css
-            },
-          classes: false, // No need to place classes on the DOM, just use JS Events
-          active: function() {
-              LOADED_FONTS[fontFamily] = true;
-              callback();
-            },
-          inactive: function() {
-              // If we fail to fetch the font, still continue.
-              LOADED_FONTS[fontFamily] = true;
-              callback();
-            }
-        });
+        custom: {
+          families: [fontFamily] // TODO replace this with something that reads the css
+        },
+        classes: false, // No need to place classes on the DOM, just use JS Events
+        active: function () {
+          LOADED_FONTS[fontFamily] = true;
+          callback();
+        },
+        inactive: function () {
+          // If we fail to fetch the font, still continue.
+          LOADED_FONTS[fontFamily] = true;
+          callback();
+        }
+      });
     },
 
-    addDescription: function(svg, description) {
-          var desc = document.createElementNS(xmlns, 'desc');
-          desc.appendChild(document.createTextNode(description));
-          svg.appendChild(desc);
-        },
+    addDescription: function (svg, description) {
+      var desc = document.createElementNS(xmlns, 'desc');
+      desc.appendChild(document.createTextNode(description));
+      svg.appendChild(desc);
+    },
 
-    setupPaper: function(container) {
+    setupPaper: function (container) {
       // Container must be a SVG element. We assume it's a div, so lets create a SVG and insert
       var svg = document.createElementNS(xmlns, 'svg');
       container.appendChild(svg);
@@ -1390,22 +1479,22 @@ if (typeof Snap != 'undefined') {
       var a = this.arrowMarkers_ = {};
       var arrow = this.paper_.path('M 0 0 L 5 2.5 L 0 5 z');
       a[ARROWTYPE.FILLED] = arrow.marker(0, 0, 5, 5, 5, 2.5)
-       .attr({id: 'markerArrowBlock'});
+        .attr({ id: 'markerArrowBlock' });
 
       arrow = this.paper_.path('M 9.6,8 1.92,16 0,13.7 5.76,8 0,2.286 1.92,0 9.6,8 z');
       a[ARROWTYPE.OPEN] = arrow.marker(0, 0, 9.6, 16, 9.6, 8)
-       .attr({markerWidth: '4', id: 'markerArrowOpen'});
+        .attr({ markerWidth: '4', id: 'markerArrowOpen' });
     },
 
-    layout: function() {
+    layout: function () {
       BaseTheme.prototype.layout.call(this);
       this.paper_.attr({
-        width:  this.diagram.width + 'px',
+        width: this.diagram.width + 'px',
         height: this.diagram.height + 'px'
       });
     },
 
-    textBBox: function(text, font) {
+    textBBox: function (text, font) {
       // TODO getBBox will return the bounds with any whitespace/kerning. This makes some of our aligments screwed up
       var t = this.createText(text, font);
       var bb = t.getBBox();
@@ -1414,26 +1503,26 @@ if (typeof Snap != 'undefined') {
     },
 
     // For each drawn element, push onto the stack, so it can be wrapped in a single outer element
-    pushToStack: function(element) {
+    pushToStack: function (element) {
       this._stack.push(element);
       return element;
     },
 
     // Begin a group of elements
-    beginGroup: function() {
+    beginGroup: function () {
       this._stack = [];
     },
 
     // Finishes the group, and returns the <group> element
-    finishGroup: function() {
+    finishGroup: function () {
       var g = this.paper_.group.apply(this.paper_, this._stack);
       this.beginGroup(); // Reset the group
       return g;
     },
 
-    createText: function(text, font) {
-      text = text.split('\n').map(function(x) {
-          return x.trim();
+    createText: function (text, font) {
+      text = text.split('\n').map(function (x) {
+        return x.trim();
       });
       var t = this.paper_.text(0, 0, text);
       t.attr(font || {});
@@ -1448,7 +1537,7 @@ if (typeof Snap != 'undefined') {
       return t;
     },
 
-    drawLine: function(x1, y1, x2, y2, linetype, arrowhead) {
+    drawLine: function (x1, y1, x2, y2, linetype, arrowhead) {
       var line = this.paper_.line(x1, y1, x2, y2).attr(LINE);
       if (linetype !== undefined) {
         line.attr('strokeDasharray', this.lineTypes_[linetype]);
@@ -1459,7 +1548,7 @@ if (typeof Snap != 'undefined') {
       return this.pushToStack(line);
     },
 
-    drawRect: function(x, y, w, h) {
+    drawRect: function (x, y, w, h) {
       var rect = this.paper_.rect(x, y, w, h).attr(RECT);
       return this.pushToStack(rect);
     },
@@ -1469,51 +1558,69 @@ if (typeof Snap != 'undefined') {
      * x,y (int) x,y top left point of the text, or the center of the text (depending on align param)
      * text (string) text to print
      * font (Object)
-     * align (string) ALIGN_LEFT or ALIGN_CENTER
+     * align (string) ALIGN_LEFT, ALIGN_CENTER, ALIGN_HORIZONTAL_CENTER or ALIGN_VERTICAL_CENTER
      */
-    drawText: function(x, y, text, font, align) {
+    drawText: function (x, y, text, font, align, cls, id) {
       var t = this.createText(text, font);
       var bb = t.getBBox();
 
-      if (align == ALIGN_CENTER) {
+      if (align == ALIGN_CENTER || align == ALIGN_HORIZONTAL_CENTER) {
         x = x - bb.width / 2;
+      }
+      if (align == ALIGN_CENTER || align == ALIGN_VERTICAL_CENTER) {
         y = y - bb.height / 2;
       }
 
       // Now move the text into place
       // `y - bb.y` because text(..) is positioned from the baseline, so this moves it down.
-      t.attr({x: x - bb.x, y: y - bb.y});
-      t.selectAll('tspan').attr({x: x});
+      t.attr({ x: x - bb.x, y: y - bb.y });
+      t.selectAll('tspan').attr({ x: x });
+
+      if (cls) {
+        t.addClass(cls);
+      }
+      if (id) {
+        t.attr('id', id);
+      }
 
       this.pushToStack(t);
       return t;
     },
 
-    drawTitle: function() {
+    drawTitle: function () {
       this.beginGroup();
       BaseTheme.prototype.drawTitle.call(this);
       return this.finishGroup().addClass('title');
     },
 
-    drawActor: function(actor, offsetY, height) {
+    drawActor: function (actor, offsetY, height, idx) {
       this.beginGroup();
       BaseTheme.prototype.drawActor.call(this, actor, offsetY, height);
-      return this.finishGroup().addClass('actor');
+
+      var group = this.finishGroup().addClass('actor');
+      if (actor.cls) {
+        group.addClass(actor.cls[idx]);
+      }
+      if (actor.id) {
+        group.attr('id', actor.id[idx]);
+      }
+
+      return group;
     },
 
-    drawSignal: function(signal, offsetY) {
+    drawSignal: function (signal, offsetY) {
       this.beginGroup();
       BaseTheme.prototype.drawSignal.call(this, signal, offsetY);
       return this.finishGroup().addClass('signal');
     },
 
-    drawSelfSignal: function(signal, offsetY) {
+    drawSelfSignal: function (signal, offsetY) {
       this.beginGroup();
       BaseTheme.prototype.drawSelfSignal.call(this, signal, offsetY);
       return this.finishGroup().addClass('signal');
     },
 
-    drawNote: function(note, offsetY) {
+    drawNote: function (note, offsetY) {
       this.beginGroup();
       BaseTheme.prototype.drawNote.call(this, note, offsetY);
       return this.finishGroup().addClass('note');
@@ -1524,19 +1631,19 @@ if (typeof Snap != 'undefined') {
    * SnapHandTheme
    ******************/
 
-  var SnapHandTheme = function(diagram, options, resume) {
-        _.defaults(options, {
-            'css-class': 'hand',
-            'font-size': 16,
-            'font-family': 'danielbd'
-          });
+  var SnapHandTheme = function (diagram, options, resume) {
+    _.defaults(options, {
+      'css-class': 'hand',
+      'font-size': 16,
+      'font-family': 'danielbd'
+    });
 
-        this.init(diagram, options, resume);
-      };
+    this.init(diagram, options, resume);
+  };
 
   // Take the standard SnapTheme and make all the lines wobbly
   _.extend(SnapHandTheme.prototype, SnapTheme.prototype, {
-    drawLine: function(x1, y1, x2, y2, linetype, arrowhead) {
+    drawLine: function (x1, y1, x2, y2, linetype, arrowhead) {
       var line = this.paper_.path(handLine(x1, y1, x2, y2)).attr(LINE);
       if (linetype !== undefined) {
         line.attr('strokeDasharray', this.lineTypes_[linetype]);
@@ -1547,14 +1654,14 @@ if (typeof Snap != 'undefined') {
       return this.pushToStack(line);
     },
 
-    drawRect: function(x, y, w, h) {
+    drawRect: function (x, y, w, h) {
       var rect = this.paper_.path(handRect(x, y, w, h)).attr(RECT);
       return this.pushToStack(rect);
     }
   });
 
   registerTheme('snapSimple', SnapTheme);
-  registerTheme('snapHand',   SnapHandTheme);
+  registerTheme('snapHand', SnapHandTheme);
 }
 
 /** js sequence diagrams
@@ -1686,9 +1793,9 @@ if (typeof Raphael != 'undefined') {
      * x,y (int) x,y top left point of the text, or the center of the text (depending on align param)
      * text (string) text to print
      * font (Object)
-     * align (string) ALIGN_LEFT or ALIGN_CENTER
+     * align (string) ALIGN_LEFT, ALIGN_CENTER, ALIGN_HORIZONTAL_CENTER or ALIGN_VERTICAL_CENTER
      */
-    drawText: function(x, y, text, font, align) {
+    drawText: function(x, y, text, font, align, cls, id) {
       text = this.cleanText(text);
       font = font || {};
       align = align || ALIGN_LEFT;
@@ -1696,8 +1803,10 @@ if (typeof Raphael != 'undefined') {
       var paper = this.paper_;
       var bb = this.textBBox(text, font);
 
-      if (align == ALIGN_CENTER) {
+      if (align == ALIGN_CENTER || align == ALIGN_HORIZONTAL_CENTER) {
         x = x - bb.width / 2;
+      }
+      if (align == ALIGN_CENTER || align == ALIGN_VERTICAL_CENTER) {
         y = y - bb.height / 2;
       }
 
@@ -1709,6 +1818,13 @@ if (typeof Raphael != 'undefined') {
         t = paper.text(x - bb.x - bb.width / 2, y - bb.y, text);
         t.attr(font);
         t.attr({'text-anchor': 'start'});
+      }
+
+      if(cls) {
+        t.parent.addClass(cls);
+      }
+      if(id) {
+        t.parent.attr('id', id);
       }
 
       return t;

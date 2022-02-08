@@ -43,26 +43,26 @@ test: dependencies dist/sequence-diagram-min.js
 
 	# Test the un-minifed file (with underscore)
 	$(NODE_MODULES)/qunit \
-		-c dist/sequence-diagram.js \
-		-t test/*-tests.js \
+		--require dist/sequence-diagram.js \
+		-f test/*-tests.js \
 		-d test/*-mock.js $(BOWER_COMPONENTS)/underscore/underscore-min.js
 
 	# Test the un-minifed file (with lodash)
 	$(NODE_MODULES)/qunit \
-		-c dist/sequence-diagram.js \
-		-t test/*-tests.js \
+		--require dist/sequence-diagram.js \
+		-f test/*-tests.js \
 		-d test/*-mock.js $(BOWER_COMPONENTS)/lodash/dist/lodash.min.js
 
 	# Test the minifed file (with underscore)
 	$(NODE_MODULES)/qunit \
-		-c dist/sequence-diagram-min.js \
-		-t test/*-tests.js \
+		--require dist/sequence-diagram-min.js \
+		-f test/*-tests.js \
 		-d test/*-mock.js $(BOWER_COMPONENTS)/underscore/underscore-min.js
 
 	# Test the minifed file (with lodash)
 	$(NODE_MODULES)/qunit \
-		-c dist/sequence-diagram-min.js \
-		-t test/*-tests.js \
+		--require dist/sequence-diagram-min.js \
+		-f test/*-tests.js \
 		-d test/*-mock.js $(BOWER_COMPONENTS)/lodash/dist/lodash.min.js
 
 build/grammar.js: src/grammar.jison
@@ -116,6 +116,5 @@ dist/%-min.js dist/%-min.js.map: dist/%.js
 	#
 	$(NODE_MODULES)/uglifyjs \
 		$< -o $@ \
-		--compress --comments --lint \
-		--source-map $@.map \
-		--source-map-url `basename $<`
+		--compress --comments \
+		--source-map "filename=$@.map,url=$<"
